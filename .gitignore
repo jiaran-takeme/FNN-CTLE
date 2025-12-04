@@ -13,6 +13,7 @@ Result/
 *.npy
 *.pkl
 *.ckpt
+*.cfg
  # 你的非共轭留数模型目录
 
 # Python缓存文件
