@@ -1,12 +1,19 @@
+import sys
+import os
+# ========== 关键：添加ADS库路径 ==========
+# 替换成你的ADS安装路径（ADS 2025/2024/2023都适用）
+ADS_PATH = r"D:\ProgramFiles\Keysight\ADS2025"
+# 添加ADS的Python库路径
+sys.path.append(os.path.join(ADS_PATH, "tools", "python", "Lib", "site-packages"))
+sys.path.append(os.path.join(ADS_PATH, "tools", "python"))
 from keysight.ads import de
 from keysight.ads.de import db_uu as db
 import os
 from keysight.edatoolbox import ads
 import keysight.ads.dataset as dataset
-import matplotlib.pyplot as plt
-from IPython.core import getipython
+
 from pathlib import Path
-import numpy as np
+import pandas as pd
 
 workspace_path = r"C:/Users/zhaohongrui/Desktop/ADS/FNN_CTLE_wrk"
 cell_name = "cell_testbench"
@@ -32,7 +39,6 @@ output_data = dataset.open(
 )
 
 # 定位测量块（Height/Width）
-TARGET_PROBE = "EyeDiff_Probe1"
 eye_meas_block = None
 for datablock in output_data.find_varblocks_with_var_name("Height"):
     if target_probe in datablock.name:
@@ -47,3 +53,43 @@ for datablock in output_data.find_varblocks_with_var_name("Density"):
         break
 
 my_eye_meas = output_data[eye_meas_block].to_dataframe().reset_index()
+my_eye_raw = output_data[eye_raw_block].to_dataframe().reset_index()
+
+height = my_eye_meas["Height"].iloc[0]
+width_s = my_eye_meas["Width"].iloc[0]
+level1 = my_eye_meas["Level1"].iloc[0]
+level0 = my_eye_meas["Level0"].iloc[0]
+
+width_ps = width_s * 1e12
+amplitude = level1 - level0
+
+# 构建测量指标DataFrame
+meas_data = {
+    "指标名称": ["眼高(V)", "眼宽(s)", "眼宽(ps)", "电平1(V)", "电平0(V)", "眼幅(V)"],
+    "数值": [height, width_s, width_ps, level1, level0, amplitude]
+}
+df_meas = pd.DataFrame(meas_data)
+
+# 导出测量指标CSV
+meas_csv_filename = os.path.join(target_output_dir, f"{cell_name}_{target_probe}_眼图测量指标.csv")
+df_meas.to_csv(meas_csv_filename, index=False, encoding="utf-8-sig")
+
+# 无需单独提取eye_time/eye_density等中间变量，直接在DataFrame中计算
+df_raw = pd.DataFrame({
+    "索引": my_eye_raw["index"],
+    "时间(s)": my_eye_raw["time"],
+    "时间(ps)": my_eye_raw["time"] * 1e12,
+    "密度值": my_eye_raw["Density"]
+})
+
+# 导出原始数据CSV
+raw_csv_filename = os.path.join(target_output_dir, f"{cell_name}_{target_probe}_眼图原始数据.csv")
+df_raw.to_csv(raw_csv_filename, index=False, encoding="utf-8-sig")
+
+# ========== 3. 打印结果（精简：用已计算的变量，避免重复取值） ==========
+print("\n=== 提取的核心指标 ===")
+print(f"眼高：{height:.4f} V")
+print(f"眼宽：{width_ps:.2f} ps")
+print(f"眼幅：{amplitude:.4f} V")
+# print(f"\n时间轴（前5个值，ps）：{df_raw['时间(ps)'].head().values}")
+# print(f"密度（前5个值）：{df_raw['密度值'].head().values}")
