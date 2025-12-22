@@ -6,6 +6,9 @@ import keysight.ads.dataset as dataset
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
+import warnings
+# 屏蔽 PySide2 相关的弃用警告
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="PySide2")
 
 workspace_path = r"C:/Users/zhaohongrui/Desktop/ADS/FNN_CTLE_wrk"
 cell_name = "cell_testbench"
@@ -20,11 +23,12 @@ try:
     design.save_design()
 except:
     pass
+
 # 生成网表
 netlist = design.generate_netlist()
 print(netlist)
 simulator = ads.CircuitSimulator()
-target_output_dir = os.path.join(workspace_path, "data\python_data")
+target_output_dir = os.path.join(workspace_path, r"data/python_data")
 simulator.run_netlist(netlist, output_dir=target_output_dir)
 # 仿真结果
 output_data = dataset.open(
@@ -76,7 +80,7 @@ df_raw = pd.DataFrame({
 })
 
 # 导出原始数据CSV
-raw_csv_filename = os.path.join(target_output_dir, f"{cell_name}_{target_probe}_眼图原始数据.csv")
+raw_csv_filename = os.path.join(target_output_dir, f"{target_probe}_眼图原始数据.csv")
 df_raw.to_csv(raw_csv_filename, index=False, encoding="utf-8-sig")
 
 # ========== 3. 打印结果（精简：用已计算的变量，避免重复取值） ==========
