@@ -6,6 +6,7 @@ ADS_PATH = r"D:\ProgramFiles\Keysight\ADS2025"
 # 添加ADS的Python库路径
 sys.path.append(os.path.join(ADS_PATH, "tools", "python", "Lib", "site-packages"))
 sys.path.append(os.path.join(ADS_PATH, "tools", "python"))
+
 from keysight.ads import de
 from keysight.ads.de import db_uu as db
 import os
