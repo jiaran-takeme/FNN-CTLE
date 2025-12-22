@@ -1,20 +1,11 @@
-import sys
-import os
-# ========== 关键：添加ADS库路径 ==========
-# 替换成你的ADS安装路径（ADS 2025/2024/2023都适用）
-ADS_PATH = r"D:\ProgramFiles\Keysight\ADS2025"
-# 添加ADS的Python库路径
-sys.path.append(os.path.join(ADS_PATH, "tools", "python", "Lib", "site-packages"))
-sys.path.append(os.path.join(ADS_PATH, "tools", "python"))
-
 from keysight.ads import de
 from keysight.ads.de import db_uu as db
 import os
 from keysight.edatoolbox import ads
 import keysight.ads.dataset as dataset
-
 from pathlib import Path
 import pandas as pd
+import matplotlib.pyplot as plt
 
 workspace_path = r"C:/Users/zhaohongrui/Desktop/ADS/FNN_CTLE_wrk"
 cell_name = "cell_testbench"
@@ -26,13 +17,14 @@ design = db.open_design(name=(library_name, cell_name, "schematic"))
 # 修改参数
 try:
     pass
+    design.save_design()
 except:
     pass
 # 生成网表
 netlist = design.generate_netlist()
 print(netlist)
 simulator = ads.CircuitSimulator()
-target_output_dir = os.path.join(workspace_path, "data")
+target_output_dir = os.path.join(workspace_path, "data\python_data")
 simulator.run_netlist(netlist, output_dir=target_output_dir)
 # 仿真结果
 output_data = dataset.open(
@@ -94,3 +86,33 @@ print(f"眼宽：{width_ps:.2f} ps")
 print(f"眼幅：{amplitude:.4f} V")
 # print(f"\n时间轴（前5个值，ps）：{df_raw['时间(ps)'].head().values}")
 # print(f"密度（前5个值）：{df_raw['密度值'].head().values}")
+
+## 眼图
+csv_path = raw_csv_filename
+df = pd.read_csv(csv_path, encoding="utf-8-sig")
+
+# 2. 提取核心数据（时间+电压，这里“密度值”实际是电压值）
+time_ps = df["时间(ps)"].values
+voltage = df["密度值"].values  # 直接用这个作为电压
+
+# 3. 绘制最简单的眼图（时间-电压散点图）
+plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']
+plt.rcParams['axes.unicode_minus'] = False
+plt.figure(figsize=(8, 6))
+
+# 核心：绘制时间-电压的散点（点大小调小，避免重叠）
+plt.scatter(time_ps, voltage, s=1, alpha=0.5, color='blue')
+
+# 4. 添加基础标注
+plt.xlabel('时间 (ps)')
+plt.ylabel('电压 (V)')
+plt.title('EyeDiff_Probe1')
+plt.grid(True, alpha=0.3)
+
+# 5. 保存+显示
+save_path = os.path.join(target_output_dir, r"simple_eye_diagram.png")
+plt.tight_layout()
+plt.savefig(save_path, dpi=300)
+plt.show()
+
+print(f"✅ 最简单眼图已保存到：{save_path}")
