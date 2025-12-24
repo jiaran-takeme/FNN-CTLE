@@ -1,3 +1,6 @@
+import warnings
+# 屏蔽所有类型的警告（最彻底）
+warnings.filterwarnings("ignore")
 from keysight.ads import de
 from keysight.ads.de import db_uu as db
 import os
@@ -6,23 +9,59 @@ import keysight.ads.dataset as dataset
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
-import warnings
-# 屏蔽 PySide2 相关的弃用警告
-warnings.filterwarnings("ignore", category=DeprecationWarning, module="PySide2")
+import math
 
 workspace_path = r"C:/Users/zhaohongrui/Desktop/ADS/FNN_CTLE_wrk"
 cell_name = "cell_testbench"
 library_name = "FNN_CTLE_lib"
 target_probe = "Eye_Probe1"
-# 打开工作空间
+gain = "2e11"
+zero = ['(-1e9)*(2*pi)']
+poles = ['(-8e9)*(2*pi)', '(-9e9)*(2*pi)']
+value_R = "100 Ohm"
+value_C = "1.0 pF"
+
+def limit_gain(zero, poles):
+    """
+    简洁版：计算CTLE合理Gain值（频率+功率双约束）
+    :param zero: 零点列表，如 ['(-2e9)*(2*pi)']
+    :param poles: 极点列表，如 ['(-8.8e9)*(2*pi)', '(-9e9)*(2*pi)']
+    :return: 受约束的Gain值
+    """
+    # 1. 解析零极点频率（Hz）
+    def parse(freq_str):
+        try:
+            return abs(eval(freq_str)) / (2 * math.pi)
+        except:
+            return 0
+    f_z = parse(zero[0]) if zero else 0
+    f_p = [parse(p) for p in poles if parse(p) > 0]
+    # 2. 频率约束（1零2极）
+    gain_base = 1e11
+    gain_freq = gain_base * ((math.sqrt(f_p[0] * f_p[1]) / f_z) ** 2) if len(f_p) >= 2 and f_z > 0 else 2e11
+    # 3. 功率约束
+    gain_power = gain_base * 10 ** ((1 - (-20)) / 20)
+    # 4. 取最小值返回
+    gain = f"{min(gain_freq, gain_power)}"
+    return gain
+
+gain = limit_gain(zero, poles)
+
 de.open_workspace(workspace_path)
 design = db.open_design(name=(library_name, cell_name, "schematic"))
-# 修改参数
-try:
-    pass
-    design.save_design()
-except:
-    pass
+r1 = design.find_instance("R1")
+r1.parameters["R"].value = value_R
+r1.update_item_annotation()
+
+c1 = design.find_instance("C1")
+c1.parameters["C"].value = value_C
+c1.update_item_annotation()
+
+rx_diff1 = design.find_instance("Rx_Diff1")
+rx_diff1.parameters['Gain'].value = gain
+rx_diff1.parameters['Zero'].value = zero
+rx_diff1.parameters['Pole'].value = poles
+rx_diff1.update_item_annotation()
 
 # 生成网表
 netlist = design.generate_netlist()
@@ -88,6 +127,10 @@ print("\n=== 提取的核心指标 ===")
 print(f"眼高：{height:.4f} V")
 print(f"眼宽：{width_ps:.2f} ps")
 print(f"眼幅：{amplitude:.4f} V")
+print("\n=== Rx参数===")
+print(f"增益：{gain}")
+print(f"零点：{zero}")
+print(f"极点：{poles}")
 # print(f"\n时间轴（前5个值，ps）：{df_raw['时间(ps)'].head().values}")
 # print(f"密度（前5个值）：{df_raw['密度值'].head().values}")
 
@@ -110,11 +153,11 @@ plt.scatter(time_ps, voltage, s=1, alpha=0.5, color='blue')
 # 4. 添加基础标注
 plt.xlabel('时间 (ps)')
 plt.ylabel('电压 (V)')
-plt.title('EyeDiff_Probe1')
+plt.title('EyeDiff_Probe')
 plt.grid(True, alpha=0.3)
 
 # 5. 保存+显示
-save_path = os.path.join(target_output_dir, r"simple_eye_diagram.png")
+save_path = os.path.join(target_output_dir, r"eye_diagram.png")
 plt.tight_layout()
 plt.savefig(save_path, dpi=300)
 plt.show()
