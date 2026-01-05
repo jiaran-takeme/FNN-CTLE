@@ -15,51 +15,37 @@ workspace_path = r"C:/Users/zhaohongrui/Desktop/ADS/FNN_CTLE_wrk"
 cell_name = "cell_testbench"
 library_name = "FNN_CTLE_lib"
 target_probe = "Eye_Probe1"
-gain = "1.7e11"
-zero = ['(-1e9)*(2*pi)']
-poles = ['(-8e9)*(2*pi)', '(-9e9)*(2*pi)']
-value_R = "100 Ohm"
-value_C = "1.0 pF"
 
-def limit_gain(zero, poles):
-    """
-    简洁版：计算CTLE合理Gain值（频率+功率双约束）
-    :param zero: 零点列表，如 ['(-2e9)*(2*pi)']
-    :param poles: 极点列表，如 ['(-8.8e9)*(2*pi)', '(-9e9)*(2*pi)']
-    :return: 受约束的Gain值
-    """
-    # 1. 解析零极点频率（Hz）
-    def parse(freq_str):
-        try:
-            return abs(eval(freq_str)) / (2 * math.pi)
-        except:
-            return 0
-    f_z = parse(zero[0]) if zero else 0
-    f_p = [parse(p) for p in poles if parse(p) > 0]
-    # 2. 频率约束（1零2极）
-    gain_base = 1e11
-    gain_freq = gain_base * ((math.sqrt(f_p[0] * f_p[1]) / f_z) ** 2) if len(f_p) >= 2 and f_z > 0 else 2e11
-    # 3. 功率约束
-    gain_power = gain_base * 10 ** ((1 - (-20)) / 20)
-    # 4. 取最小值返回
-    gain = f"{min(gain_freq, gain_power)}"
-    return gain
+# 定义新格式的输入参数
+gm = 35  # mS (毫西门子)
+cp = 87  # fF (飞法)
+zero = ['(-2e9)*(2*math.pi)']  # 修正为math.pi，保证解析正常
+poles = ['(-16e9)*(2*math.pi)', '(-48e9)*(2*math.pi)']
 
-gain = limit_gain(zero, poles)
-print(gain)
+def UCIe(gm, cp, zero_list, poles_list):
+    wz_val = eval(zero_list[0])  # 解析零点角频率
+    wp1_val = eval(poles_list[0])  # 解析第一个极点角频率
+    wp2_val = eval(poles_list[1])  # 解析第二个极点角频率
+    # 第三步：单位转换（统一为国际单位）
+    gm_S = gm * 1e-3  # mS -> S
+    cp_F = cp * 1e-15  # fF -> F
+    # 第四步：计算各项增益参数
+    Aac = gm_S / (cp_F * wp2_val)
+    Adc = (wz_val * Aac) / wp1_val
+    Apre = (Adc * wp1_val * wp2_val) / wz_val
+    # 打印结果（保留4位小数，便于阅读）
+    print(f"Aac: {Aac:.4f}")
+    print(f"Adc: {Adc:.4f}")
+    return Apre
+
+Apre = UCIe(gm=gm, cp=cp, zero_list=zero, poles_list=poles)
+print(f"Apre: {Apre:.4f}")
 
 de.open_workspace(workspace_path)
 design = db.open_design(name=(library_name, cell_name, "schematic"))
-r1 = design.find_instance("R1")
-r1.parameters["R"].value = value_R
-r1.update_item_annotation()
-
-c1 = design.find_instance("C1")
-c1.parameters["C"].value = value_C
-c1.update_item_annotation()
 
 rx_diff1 = design.find_instance("Rx_Diff1")
-rx_diff1.parameters['Gain'].value = gain
+rx_diff1.parameters['Gain'].value = Apre
 rx_diff1.parameters['Zero'].value = zero
 rx_diff1.parameters['Pole'].value = poles
 rx_diff1.update_item_annotation()
