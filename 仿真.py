@@ -15,7 +15,7 @@ workspace_path = r"C:/Users/zhaohongrui/Desktop/ADS/FNN_CTLE_wrk"
 cell_name = "cell_testbench"
 library_name = "FNN_CTLE_lib"
 target_probe = "Eye_Probe1"
-gain = "2e11"
+gain = "1.7e11"
 zero = ['(-1e9)*(2*pi)']
 poles = ['(-8e9)*(2*pi)', '(-9e9)*(2*pi)']
 value_R = "100 Ohm"
@@ -46,6 +46,7 @@ def limit_gain(zero, poles):
     return gain
 
 gain = limit_gain(zero, poles)
+print(gain)
 
 de.open_workspace(workspace_path)
 design = db.open_design(name=(library_name, cell_name, "schematic"))
@@ -127,7 +128,7 @@ print("\n=== 提取的核心指标 ===")
 print(f"眼高：{height:.4f} V")
 print(f"眼宽：{width_ps:.2f} ps")
 print(f"眼幅：{amplitude:.4f} V")
-print("\n=== Rx参数===")
+print("\n=== Rx参数 ===")
 print(f"增益：{gain}")
 print(f"零点：{zero}")
 print(f"极点：{poles}")

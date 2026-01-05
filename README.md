@@ -9,12 +9,14 @@ library_name = "FNN_CTLE_lib"
 de.close_workspace()
 de.open_workspace(r"C:/Users/zhaohongrui/Desktop/ADS/FNN_CTLE_wrk")
 design = db.open_design(name=("FNN_CTLE_lib", "cell_testbench", "schematic"))
+r1 = design.find_instance("R1")
+r1.parameters["R"].value = value_R
+r1.update_item_annotation()
 
 # 常用库
 from keysight.ads import de
 from keysight.ads.de import db_uu as db
 import os
-
 from keysight.edatoolbox import ads
  # 仿真相关
 netlist = design.generate_netlist()
