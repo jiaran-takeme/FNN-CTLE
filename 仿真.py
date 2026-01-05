@@ -15,31 +15,36 @@ workspace_path = r"C:/Users/zhaohongrui/Desktop/ADS/FNN_CTLE_wrk"
 cell_name = "cell_testbench"
 library_name = "FNN_CTLE_lib"
 target_probe = "Eye_Probe1"
-
+pi = 3.141592653
 # 定义新格式的输入参数
 gm = 35  # mS (毫西门子)
 cp = 87  # fF (飞法)
-zero = ['(-2e9)*(2*math.pi)']  # 修正为math.pi，保证解析正常
-poles = ['(-16e9)*(2*math.pi)', '(-48e9)*(2*math.pi)']
+zero = ['(-2e9)*(2*pi)']  # 修正为math.pi，保证解析正常
+poles = ['(-16e9)*(2*pi)', '(-48e9)*(2*pi)']
 
 def UCIe(gm, cp, zero_list, poles_list):
-    wz_val = eval(zero_list[0])  # 解析零点角频率
-    wp1_val = eval(poles_list[0])  # 解析第一个极点角频率
-    wp2_val = eval(poles_list[1])  # 解析第二个极点角频率
-    # 第三步：单位转换（统一为国际单位）
-    gm_S = gm * 1e-3  # mS -> S
-    cp_F = cp * 1e-15  # fF -> F
-    # 第四步：计算各项增益参数
+    """计算增益参数（使用自定义pi），返回Apre的字符串形式"""
+    # 解析表达式时使用全局定义的pi
+    global pi
+    wz_val = eval(zero_list[0])
+    wp1_val = eval(poles_list[0])
+    wp2_val = eval(poles_list[1])
+    gm_S = gm * 1e-3
+    cp_F = cp * 1e-15
     Aac = gm_S / (cp_F * wp2_val)
     Adc = (wz_val * Aac) / wp1_val
     Apre = (Adc * wp1_val * wp2_val) / wz_val
-    # 打印结果（保留4位小数，便于阅读）
-    print(f"Aac: {Aac:.4f}")
-    print(f"Adc: {Adc:.4f}")
-    return Apre
+
+    # 将数值Apre转换为字符串（保留6位小数，适配ADS参数格式）
+    Apre_str = f"{Apre:.6f}"
+
+    # 可选：如果需要科学计数法格式（比如数值过大/过小），可改用下面这行
+    # Apre_str = f"{Apre:.6e}"
+
+    return Apre_str
 
 Apre = UCIe(gm=gm, cp=cp, zero_list=zero, poles_list=poles)
-print(f"Apre: {Apre:.4f}")
+print(f"Apre: {Apre}")
 
 de.open_workspace(workspace_path)
 design = db.open_design(name=(library_name, cell_name, "schematic"))
@@ -115,7 +120,7 @@ print(f"眼高：{height:.4f} V")
 print(f"眼宽：{width_ps:.2f} ps")
 print(f"眼幅：{amplitude:.4f} V")
 print("\n=== Rx参数 ===")
-print(f"增益：{gain}")
+print(f"增益：{Apre}")
 print(f"零点：{zero}")
 print(f"极点：{poles}")
 # print(f"\n时间轴（前5个值，ps）：{df_raw['时间(ps)'].head().values}")
