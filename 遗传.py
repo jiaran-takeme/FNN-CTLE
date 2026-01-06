@@ -122,7 +122,7 @@ def fitness_function(fz, fp1, fp2):
     height, width_ps = simulate_eye(fz, fp1, fp2)
     # 归一化（基于参数范围的经验最大值，可根据实际调整）
     norm_height = height / 1.0  # 假设眼高最大约1V
-    norm_width = width_ps / 100  # 假设眼宽最大约100ps
+    norm_width = width_ps / 20  # 假设眼宽最大约20ps
     # 加权得分（防止负数）
     score = max(0, HEIGHT_WEIGHT * norm_height + WIDTH_WEIGHT * norm_width)
     return score, height, width_ps

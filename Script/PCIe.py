@@ -3,9 +3,9 @@ import math  # 导入math库，提供pi常量
 # 定义参数（保持原有单位定义）
 gm = 35  # mS (毫西门子)
 cp = 87  # fF (飞法)
-wz = "(1e9)*(2*math.pi)"  # 修正：使用math.pi，否则会报pi未定义
-wp1 = "(16e9)*(2*math.pi)"
-wp2 = "(64e9)*(2*math.pi)"
+wz = "(5.44e9)*(2*math.pi)"  # 修正：使用math.pi，否则会报pi未定义
+wp1 = "(16.69e9)*(2*math.pi)"
+wp2 = "(48e9)*(2*math.pi)"
 
 
 def PCIe(gm, cp, wz, wp1, wp2):
