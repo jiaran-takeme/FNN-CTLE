@@ -3,6 +3,8 @@
 *.xls
 *.txt
 *.csv
+*.s4p
+*.s2p
 Data/
 Result/
  # 你的Excel输出目录
