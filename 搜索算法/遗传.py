@@ -296,7 +296,7 @@ def genetic_algorithm():
             p1 = selected[i]
             p2 = selected[i + 1] if i + 1 < POPULATION_SIZE else selected[0]
             c1, c2 = crossover(p1, p2)
-            next_population.extend([c1, c2])
+            next_population.extend([c1, c2])                                                                                                                                
         next_population = [mutate(ind) for ind in next_population[:POPULATION_SIZE]]
         population = next_population
 

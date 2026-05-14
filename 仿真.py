@@ -15,35 +15,10 @@ workspace_path = r"C:/Users/zhaohongrui/Desktop/ADS/FNN_CTLE_wrk"
 cell_name = "cell_testbench"
 library_name = "FNN_CTLE_lib"
 target_probe = "Eye_Probe1"
-pi = 3.141592653
-# 定义新格式的输入参数
-gm = 35  # mS (毫西门子)
-cp = 87  # fF (飞法)
-zero = ['(-2e9)*(2*pi)']  # 修正为math.pi，保证解析正常
-poles = ['(-16e9)*(2*pi)', '(-48e9)*(2*pi)']
 
-def UCIe(gm, cp, zero_list, poles_list):
-    """计算增益参数（使用自定义pi），返回Apre的字符串形式"""
-    # 解析表达式时使用全局定义的pi
-    global pi
-    wz_val = eval(zero_list[0])
-    wp1_val = eval(poles_list[0])
-    wp2_val = eval(poles_list[1])
-    gm_S = gm * 1e-3
-    cp_F = cp * 1e-15
-    Aac = gm_S / (cp_F * wp2_val)
-    Adc = (wz_val * Aac) / wp1_val
-    Apre = (Adc * wp1_val * wp2_val) / wz_val
-
-    # 将数值Apre转换为字符串（保留6位小数，适配ADS参数格式）
-    Apre_str = f"{Apre:.6f}"
-
-    # 可选：如果需要科学计数法格式（比如数值过大/过小），可改用下面这行
-    # Apre_str = f"{Apre:.6e}"
-
-    return Apre_str
-
-Apre = UCIe(gm=gm, cp=cp, zero_list=zero, poles_list=poles)
+zero = ['(-3e9)*(2*pi)']  # 修正为math.pi，保证解析正常
+poles = ['(-24e9)*(2*pi)', '(-48e9)*(2*pi)']
+Apre = "40.0e+10"
 print(f"Apre: {Apre}")
 
 de.open_workspace(workspace_path)
@@ -65,7 +40,8 @@ simulator.run_netlist(netlist, output_dir=target_output_dir)
 output_data = dataset.open(
     Path(os.path.join(target_output_dir, f"{cell_name}" + ".ds"))
 )
-
+# Inspect available data blocks in the dataset
+print("Available Data Blocks: ", output_data.varblock_names)
 # 定位测量块（Height/Width）
 eye_meas_block = None
 for datablock in output_data.find_varblocks_with_var_name("Height"):
