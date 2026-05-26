@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-批量生成眼图原始数据
-零极点 + Apre 全部随机范围
-每次自动保存独立的眼图原始数据 CSV
-文件名包含所有参数：序号_零点_极点1_极点2_增益
+单次生成眼图原始数据
+零极点 + Apre 直接使用图片里的值
 """
 
 import warnings
-import random
 import os
 import pandas as pd
 from pathlib import Path
@@ -28,7 +25,7 @@ target_probe = "Eye_Probe1"
 target_output_dir = os.path.join(workspace_path, r"data/python_data")
 os.makedirs(target_output_dir, exist_ok=True)
 
-# ===================== 仿真函数 =====================
+# ===================== 单次仿真函数 =====================
 def run_ads_simulation(zero_ghz, pole1_ghz, pole2_ghz, Apre_val, save_index):
     zero = [f"(-{zero_ghz}e9)*(2*pi)"]
     poles = [f"(-{pole1_ghz}e9)*(2*pi)", f"(-{pole2_ghz}e9)*(2*pi)"]
@@ -86,8 +83,7 @@ def run_ads_simulation(zero_ghz, pole1_ghz, pole2_ghz, Apre_val, save_index):
             "电压(V)": my_eye_raw["Density"]
         })
 
-        # 🔥 保存：文件名包含所有仿真参数
-        # 格式：Eye_序号_零点GHz_极点1GHz_极点2GHz_Apre值.csv
+        # 保存：文件名包含所有仿真参数
         filename = (f"Eye_{save_index:03d}_Z{zero_ghz:.2f}_P1{pole1_ghz:.2f}_P2{pole2_ghz:.2f}_A{Apre_val:.2e}.csv")
         raw_csv_filename = os.path.join(target_output_dir, filename)
         df_raw.to_csv(raw_csv_filename, index=False, encoding="utf-8-sig")
@@ -102,22 +98,20 @@ def run_ads_simulation(zero_ghz, pole1_ghz, pole2_ghz, Apre_val, save_index):
 # ===================== 打开工作空间（只打开一次） =====================
 de.open_workspace(workspace_path)
 
-# ===================== 批量循环 =====================
-total_cycles = 1  # 想跑多少次改这里
+# ===================== 单次仿真（直接用图片里的参数） =====================
+if __name__ == "__main__":
+    print("==================== 单次仿真（使用图片中的参数） ====================")
 
-for idx in range(1, total_cycles + 1):
-    print(f"\n==================== 第 {idx}/{total_cycles} 次仿真 ====================")
-
-    # 随机参数范围（原版不变）
-    fz = random.uniform(1, 12)
-    fp1 = random.uniform(12, 24)
-    fp2 = random.uniform(24, 48)
-    Apre_val = random.uniform(10e10, 50e10)
+    # 直接使用图片里的参数
+    fz = 2.5
+    fp1 = 20.00
+    fp2 = 27.44
+    Apre_val = 402298850574.7126
 
     print(f"参数 → zero={fz:.2f}GHz | pole1={fp1:.2f}GHz | pole2={fp2:.2f}GHz | Apre={Apre_val:.2e}")
 
-    # 运行仿真
-    height, width_ps = run_ads_simulation(fz, fp1, fp2, Apre_val, idx)
+    # 运行单次仿真
+    height, width_ps = run_ads_simulation(fz, fp1, fp2, Apre_val, save_index=1)
     print(f"✅ 仿真完成 → 眼高：{height:.4f} V | 眼宽：{width_ps:.2f} ps")
 
-print("\n🎉 全部批量仿真完成！")
+print("\n🎉 单次仿真完成！")
